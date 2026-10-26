@@ -270,7 +270,7 @@ fun SettingsScreen(
             }
             item {
                 Text(
-                    "MonaFlow v1.0.0 · 莫奈印象派个人效率中心",
+                    "MonaFlow v1.1.0 · 莫奈印象派个人效率中心",
                     fontSize = 11.sp,
                     color = Color(mona.textSecondary),
                     modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),

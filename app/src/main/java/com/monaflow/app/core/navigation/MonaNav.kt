@@ -22,6 +22,12 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import androidx.lifecycle.createSavedStateHandle
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.ui.Alignment
+import com.monaflow.app.core.ui.CapsuleTab
+import com.monaflow.app.core.ui.FloatingCapsuleNavigationBar
+import com.monaflow.app.core.ui.navBarContentPadding
 import kotlinx.coroutines.launch
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -99,14 +105,12 @@ object Routes {
     const val AI_SETTINGS = "ai_settings"
 }
 
-private data class BottomTab(val route: String, val label: String, val icon: ImageVector)
-
 private val bottomTabs = listOf(
-    BottomTab(Routes.TODAY, "今日", Icons.Outlined.Home),
-    BottomTab(Routes.NOTES, "笔记", Icons.AutoMirrored.Outlined.Notes),
-    BottomTab(Routes.TASKS, "待办", Icons.Outlined.CheckCircle),
-    BottomTab(Routes.HABITS, "打卡", Icons.Outlined.EditCalendar),
-    BottomTab(Routes.MINE, "我的", Icons.Outlined.Person),
+    CapsuleTab(Routes.TODAY, "今日", Icons.Outlined.Home),
+    CapsuleTab(Routes.NOTES, "笔记", Icons.AutoMirrored.Outlined.Notes),
+    CapsuleTab(Routes.TASKS, "待办", Icons.Outlined.CheckCircle),
+    CapsuleTab(Routes.HABITS, "打卡", Icons.Outlined.EditCalendar),
+    CapsuleTab(Routes.MINE, "我的", Icons.Outlined.Person),
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -117,36 +121,20 @@ fun MonaNavHost(startDestination: String = Routes.TODAY) {
     val backStack by navController.currentBackStackEntryAsState()
     val currentRoute = backStack?.destination?.route
     val showBottomBar = currentRoute in bottomTabs.map { it.route }
-    val mona = LocalMonaColors.current
 
-    Scaffold(
-        bottomBar = {
-            if (showBottomBar) {
-                NavigationBar(containerColor = Color(mona.surface)) {
-                    bottomTabs.forEach { tab ->
-                        NavigationBarItem(
-                            selected = currentRoute == tab.route,
-                            onClick = {
-                                if (currentRoute != tab.route) {
-                                    navController.navigate(tab.route) {
-                                        popUpTo(Routes.TODAY) { saveState = true }
-                                        launchSingleTop = true
-                                        restoreState = true
-                                    }
-                                }
-                            },
-                            icon = { Icon(tab.icon, contentDescription = tab.label) },
-                            label = { Text(tab.label, fontSize = 11.sp) },
-                        )
-                    }
-                }
-            }
-        },
-    ) { padding ->
+    // 顶部 insets 不在此处处理：外层 Scaffold 默认会先加一次状态栏高度，
+    // 内层 TopAppBar 又自带一次，叠加导致标题整体偏低。
+    // 现统一由各页面自身的 TopAppBar / statusBarsPadding 单次负责。
+    // 底部：内容区整体为悬浮胶囊导航让位（含手势安全区），保证最后一条内容/输入框不被遮挡。
+    val bottomReserve = navBarContentPadding()
+
+    Box(Modifier.fillMaxSize()) {
         NavHost(
             navController = navController,
             startDestination = startDestination,
-            modifier = Modifier.padding(padding),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(bottom = bottomReserve),
         ) {
             composable(Routes.TODAY) {
                 val vm: TodayViewModel = viewModel {
@@ -392,6 +380,24 @@ fun MonaNavHost(startDestination: String = Routes.TODAY) {
                     onBack = { navController.popBackStack() },
                 )
             }
+        }
+
+        // 悬浮胶囊导航栏：独立悬浮在内容上方，仅五个主入口页面显示
+        if (showBottomBar) {
+            FloatingCapsuleNavigationBar(
+                tabs = bottomTabs,
+                currentRoute = currentRoute,
+                onSelect = { route ->
+                    if (currentRoute != route) {
+                        navController.navigate(route) {
+                            popUpTo(Routes.TODAY) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    }
+                },
+                modifier = Modifier.align(Alignment.BottomCenter),
+            )
         }
     }
 }
