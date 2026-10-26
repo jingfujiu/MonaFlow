@@ -1,0 +1,29 @@
+# Gradle
+.gradle/
+build/
+
+# Android Studio / IntelliJ
+.idea/
+*.iml
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Local configuration (machine-specific SDK path)
+local.properties
+
+# Kotlin
+.kotlin/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local tooling state (Mimosa security-scan hook)
+**/.mimosa/
+
+# Build artifacts (outputs live under build/)
+*.apk
+*.aab
+*.keystore
+!debug.keystore
